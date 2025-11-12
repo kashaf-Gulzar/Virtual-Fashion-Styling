@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "699003046169",
+    "project_id": "stylesense-870ec",
+    "storage_bucket": "stylesense-870ec.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:699003046169:android:28e4551478921cb76b9d88",
+        "android_client_info": {
+          "package_name": "com.stylesense_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBCQaeRpxDF72fIV2LUxI2n5lmC3kUGG3o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

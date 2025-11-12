@@ -42,9 +42,10 @@ import SellerProfileScreen from './src/screen/SellerProfileScreen';
 import SellerEditProfileScreen from './src/screen/SellerEditProfileScreen';
 import SellerCreatePostScreen from './src/screen/SellerCreatePostScreen';
 import SellerCreatePostDetailScreen from './src/screen/SellerCreatePostDetailScreen';
-import SellerPostManageScreen from './src/screen/SellerPostManageScreen';
 import SellerPostDetailScreen from './src/screen/SellerPostDetailScreen';
 import ChatListScreen from './src/screen/ChatListScreen';
+import ChatDetailScreen from './src/screen/ChatDetailScreen';
+
 
 
 
@@ -190,9 +191,10 @@ export default function App() {
 <Stack.Screen name="SellerEditProfileScreen" component={SellerEditProfileScreen} />
 <Stack.Screen name="SellerCreatePostScreen" component={SellerCreatePostScreen} />
 <Stack.Screen name="SellerCreatePostDetailScreen" component={SellerCreatePostDetailScreen} />
-<Stack.Screen name="SellerPostManageScreen" component={SellerPostManageScreen} />
 <Stack.Screen name="SellerPostDetailScreen" component={SellerPostDetailScreen} />
 <Stack.Screen name="ChatListScreen" component={ChatListScreen} />
+<Stack.Screen name="ChatDetailScreen" component={ChatDetailScreen} />
+
 
 
 
