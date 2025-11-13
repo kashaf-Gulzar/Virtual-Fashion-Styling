@@ -107,7 +107,7 @@ const ChatListScreen = ({ navigation }) => {
 
     // Navigate
     try {
-      navigation.navigate('ChatDetail', {
+      navigation.navigate('ChatDetailScreen', {
         conversation: item,
         onMessageSent: updateUnreadCount,
       });

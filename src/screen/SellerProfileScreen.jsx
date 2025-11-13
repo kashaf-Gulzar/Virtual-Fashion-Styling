@@ -483,11 +483,11 @@ const ProfileScreen = () => {
       <View style={styles.bottomNav}>
         {[
           {key: 'Home', icon: 'home-outline', route: 'SellerDashboardScreen'},
-          {key: 'Post', icon: 'add-circle-outline', route: 'SellerPostScreen'},
+          {key: 'Post', icon: 'add-circle-outline', route: 'SellerProfileScreen'},
           {
             key: 'Messages',
             icon: 'chatbubbles-outline',
-            route: 'SellerProfilescreen',
+            route: 'ChatListScreen',
           },
           {key: 'Profile', icon: 'person-outline', route: 'SellerStoreSetup'},
         ].map(item => (

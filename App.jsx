@@ -1,5 +1,4 @@
 // App.jsx
-
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, ActivityIndicator, Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
@@ -21,10 +20,9 @@ import SellerHomeScreen from './src/screen/SellerHomeScreen';
 import SellerLoginScreen from './src/screen/SellerLoginScreen';
 import SellerSignUpScreen from './src/screen/SellerSignUpScreen';
 
-// First‐time setup
+// First-time setup
 import ProfileSetupScreen from './src/screen/ProfileSetupScreen';
 import SellerStoreSetupScreen from './src/screen/SellerStoreSetupScreen';
-// add with other screen imports
 
 // Authenticated user
 import UserMainScreen from './src/screen/UserMainScreen';
@@ -46,12 +44,7 @@ import SellerPostDetailScreen from './src/screen/SellerPostDetailScreen';
 import ChatListScreen from './src/screen/ChatListScreen';
 import ChatDetailScreen from './src/screen/ChatDetailScreen';
 
-
-
-
-
-
-// Admin flow
+// Admin
 import AdminLoginScreen from './src/screen/AdminLoginScreen';
 import AdminDashboardScreen from './src/screen/AdminDashboardScreen';
 
@@ -75,7 +68,6 @@ export default function App() {
   const [profileComplete, setProfileComplete] = useState(false);
   const [profileLoading, setProfileLoading] = useState(true);
 
-  // Firebase Auth listener
   useEffect(() => {
     const unsub = auth().onAuthStateChanged(u => {
       setUser(u);
@@ -84,10 +76,8 @@ export default function App() {
     return unsub;
   }, []);
 
-  // Firestore user profile listener
   useEffect(() => {
     setProfileLoading(true);
-
     if (!user) {
       setRole(null);
       setProfileComplete(false);
@@ -98,30 +88,20 @@ export default function App() {
     const unsub = firestore()
       .collection('users')
       .doc(user.uid)
-      .onSnapshot(
-        doc => {
-          if (!doc.exists) {
-            auth().signOut();
-            setProfileLoading(false);
-            return;
-          }
-
-          const data = doc.data() || {};
-          const userRole = data.role || 'user';
-          const isComplete =
-            userRole === 'admin' ? true : !!data.profileComplete;
-
-          setRole(userRole);
-          setProfileComplete(isComplete);
+      .onSnapshot(doc => {
+        if (!doc.exists) {
+          auth().signOut();
           setProfileLoading(false);
-        },
-        error => {
-          console.error('Profile listener error:', error);
-          setRole(null);
-          setProfileComplete(false);
-          setProfileLoading(false);
+          return;
         }
-      );
+        const data = doc.data() || {};
+        const userRole = data.role || 'user';
+        const isComplete = userRole === 'admin' ? true : !!data.profileComplete;
+
+        setRole(userRole);
+        setProfileComplete(isComplete);
+        setProfileLoading(false);
+      });
 
     return () => unsub();
   }, [user]);
@@ -137,7 +117,7 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {/* Splash */}
+        {/* Splash Screen */}
         {!splashDone && (
           <Stack.Screen name="Splash">
             {() => <SplashScreen onFinish={() => setSplashDone(true)} />}
@@ -184,30 +164,22 @@ export default function App() {
         {/* Authenticated Seller */}
         {splashDone && user && profileComplete && role === 'seller' && (
           <>
- <Stack.Screen name="SellerDashboard" component={SellerDashboardScreen} />
-<Stack.Screen name="SellerStoreSetup" component={SellerStoreSetupScreen} />
-<Stack.Screen name="Notifications" component={NotificationsScreen} />
-<Stack.Screen name="SellerProfileScreen" component={SellerProfileScreen} />
-<Stack.Screen name="SellerEditProfileScreen" component={SellerEditProfileScreen} />
-<Stack.Screen name="SellerCreatePostScreen" component={SellerCreatePostScreen} />
-<Stack.Screen name="SellerCreatePostDetailScreen" component={SellerCreatePostDetailScreen} />
-<Stack.Screen name="SellerPostDetailScreen" component={SellerPostDetailScreen} />
-<Stack.Screen name="ChatListScreen" component={ChatListScreen} />
-<Stack.Screen name="ChatDetailScreen" component={ChatDetailScreen} />
-
-
-
-
-
-
-
+            <Stack.Screen name="SellerDashboard" component={SellerDashboardScreen} />
+            <Stack.Screen name="SellerStoreSetup" component={SellerStoreSetupScreen} />
+            <Stack.Screen name="Notifications" component={NotificationsScreen} />
+            <Stack.Screen name="SellerProfileScreen" component={SellerProfileScreen} />
+            <Stack.Screen name="SellerEditProfileScreen" component={SellerEditProfileScreen} />
+            <Stack.Screen name="SellerCreatePostScreen" component={SellerCreatePostScreen} />
+            <Stack.Screen name="SellerCreatePostDetailScreen" component={SellerCreatePostDetailScreen} />
+            <Stack.Screen name="SellerPostDetailScreen" component={SellerPostDetailScreen} />
+            <Stack.Screen name="ChatListScreen" component={ChatListScreen} />
+            <Stack.Screen name="ChatDetailScreen" component={ChatDetailScreen} />
           </>
         )}
 
-        {/* Authenticated Admin */}
+        {/* Admin */}
         {splashDone && user && profileComplete && role === 'admin' && (
           <Stack.Screen name="AdminDashboard" component={AdminDashboardScreen} />
-
         )}
 
         {/* Fallback */}
@@ -218,9 +190,5 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  loader: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  }
+  loader: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 });

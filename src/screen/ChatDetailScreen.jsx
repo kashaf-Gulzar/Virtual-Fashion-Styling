@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+// ChatDetailScreen.js
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,159 +8,106 @@ import {
   FlatList,
   Image,
   StyleSheet,
-  Platform,
   KeyboardAvoidingView,
+  Platform,
+  ActivityIndicator,
   StatusBar,
   Animated,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 const ChatDetailScreen = ({ route, navigation }) => {
-  // Get conversation data from navigation
-  const { conversation } = route.params || {};
-  
-  // Safety check
-  if (!conversation) {
-    return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>No conversation data found</Text>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.backButtonText}>Go Back</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  const flatListRef = useRef(null);
+  const { conversation } = route.params;
   const [messages, setMessages] = useState([
     {
       id: '1',
-      text: 'Assalam o Alaikum! Product available hai?',
-      senderId: 'buyer',
+      text: 'Assalam o Alaikum, product available hai?',
+      sender: 'buyer',
+      senderImage: conversation.buyerImage,
       timestamp: '10:30 AM',
-      read: true,
+      status: 'read',
     },
     {
       id: '2',
-      text: 'Wa Alaikum Assalam! Ji bilkul available hai',
-      senderId: conversation.sellerId,
+      text: 'Walaikum Assalam, ji bilkul available hai',
+      sender: 'seller',
+      senderImage: conversation.sellerImage,
       timestamp: '10:31 AM',
-      read: true,
     },
     {
       id: '3',
       text: 'Price kya hai aur delivery kitne din mein hogi?',
-      senderId: 'buyer',
+      sender: 'buyer',
+      senderImage: conversation.buyerImage,
       timestamp: '10:32 AM',
-      read: true,
+      status: 'read',
     },
     {
       id: '4',
       text: 'Price 5000 hai aur delivery 2-3 din mein ho jayegi',
-      senderId: conversation.sellerId,
+      sender: 'seller',
+      senderImage: conversation.sellerImage,
       timestamp: '10:33 AM',
-      read: false,
     },
   ]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const flatListRef = useRef(null);
+  const [headerAnim] = useState(new Animated.Value(0));
 
-  // Log for debugging
   useEffect(() => {
-    console.log('ChatDetailScreen opened for:', conversation.sellerName);
+    Animated.timing(headerAnim, {
+      toValue: 1,
+      duration: 400,
+      useNativeDriver: true,
+    }).start();
   }, []);
-
-  // Mark messages as read when screen opens
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setMessages(prevMessages =>
-        prevMessages.map(msg => ({ ...msg, read: true }))
-      );
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Simulate seller typing randomly
-  useEffect(() => {
-    const typingTimer = setTimeout(() => {
-      if (Math.random() > 0.7) {
-        setIsTyping(true);
-        setTimeout(() => setIsTyping(false), 3000);
-      }
-    }, 5000);
-
-    return () => clearTimeout(typingTimer);
-  }, [messages]);
 
   const sendMessage = () => {
     if (inputText.trim() === '') return;
 
     const newMessage = {
       id: Date.now().toString(),
-      text: inputText.trim(),
-      senderId: 'buyer',
+      text: inputText,
+      sender: 'buyer',
+      senderImage: conversation.buyerImage,
       timestamp: new Date().toLocaleTimeString('en-US', {
         hour: '2-digit',
         minute: '2-digit',
       }),
-      read: false,
+      status: 'sent',
     };
 
-    setMessages(prevMessages => [...prevMessages, newMessage]);
+    setMessages([...messages, newMessage]);
     setInputText('');
 
-    // Scroll to bottom
     setTimeout(() => {
       flatListRef.current?.scrollToEnd({ animated: true });
     }, 100);
 
-    // Simulate seller reply after 2-3 seconds
+    // Simulate seller typing and reply
+    setTimeout(() => setIsTyping(true), 1500);
     setTimeout(() => {
-      const replies = [
-        'Ji zaroor, main check kar raha hoon',
-        'Theek hai, aapka order confirm kar deta hoon',
-        'Bilkul, koi masla nahi',
-        'Ji main aapko update kar dunga',
-        'Ok, main details bhejta hoon',
-        'InshAllah, sab theek ho jayega',
-        'Main abhi stock check karta hoon',
-        'Aap ka number dein please',
-      ];
-      
-      const sellerReply = {
+      setIsTyping(false);
+      const reply = {
         id: (Date.now() + 1).toString(),
-        text: replies[Math.floor(Math.random() * replies.length)],
-        senderId: conversation.sellerId,
+        text: 'Theek hai, main check kar ke batata hoon',
+        sender: 'seller',
+        senderImage: conversation.sellerImage,
         timestamp: new Date().toLocaleTimeString('en-US', {
           hour: '2-digit',
           minute: '2-digit',
         }),
-        read: false,
       };
-
-      setMessages(prevMessages => [...prevMessages, sellerReply]);
-      
-      // Mark as read after 1 second
-      setTimeout(() => {
-        setMessages(prevMessages =>
-          prevMessages.map(msg => 
-            msg.id === sellerReply.id ? { ...msg, read: true } : msg
-          )
-        );
-      }, 1000);
-
+      setMessages(prev => [...prev, reply]);
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: true });
       }, 100);
-    }, 2500);
+    }, 4000);
   };
 
   const renderMessage = ({ item, index }) => {
-    const isBuyer = item.senderId === 'buyer';
+    const isBuyer = item.sender === 'buyer';
     const animValue = new Animated.Value(0);
 
     Animated.timing(animValue, {
@@ -178,12 +126,9 @@ const ChatDetailScreen = ({ route, navigation }) => {
         ]}
       >
         {!isBuyer && (
-          <Image
-            source={{ uri: conversation.sellerImage }}
-            style={styles.messageAvatar}
-          />
+          <Image source={{ uri: item.senderImage }} style={styles.messageAvatar} />
         )}
-        
+
         <View
           style={[
             styles.messageBubble,
@@ -201,18 +146,24 @@ const ChatDetailScreen = ({ route, navigation }) => {
           <View style={styles.messageFooter}>
             <Text
               style={[
-                styles.timestamp,
-                isBuyer ? styles.buyerTimestamp : styles.sellerTimestamp,
+                styles.messageTime,
+                isBuyer ? styles.buyerTime : styles.sellerTime,
               ]}
             >
               {item.timestamp}
             </Text>
-            {isBuyer && (
+            {isBuyer && item.status && (
               <Icon
-                name={item.read ? 'checkmark-done' : 'checkmark'}
-                size={16}
-                color={item.read ? '#00D68F' : '#B2BEC3'}
-                style={styles.readIcon}
+                name={
+                  item.status === 'sent'
+                    ? 'checkmark'
+                    : item.status === 'delivered'
+                    ? 'checkmark-done'
+                    : 'checkmark-done'
+                }
+                size={14}
+                color={item.status === 'read' ? '#00D68F' : 'rgba(255,255,255,0.7)'}
+                style={styles.statusIcon}
               />
             )}
           </View>
@@ -220,79 +171,71 @@ const ChatDetailScreen = ({ route, navigation }) => {
 
         {isBuyer && (
           <Image
-            source={{ uri: conversation.buyerImage }}
-            style={styles.messageAvatar}
+            source={{ uri: item.senderImage }}
+            style={[styles.messageAvatar, styles.buyerAvatar]}
           />
         )}
       </Animated.View>
     );
   };
 
-  const renderTypingIndicator = () => {
-    if (!isTyping) return null;
-
-    return (
-      <View style={[styles.messageContainer, styles.sellerMessage]}>
-        <Image
-          source={{ uri: conversation.sellerImage }}
-          style={styles.messageAvatar}
-        />
-        <View style={[styles.messageBubble, styles.sellerBubble, styles.typingBubble]}>
-          <View style={styles.typingDots}>
-            <View style={[styles.dot, styles.dot1]} />
-            <View style={[styles.dot, styles.dot2]} />
-            <View style={[styles.dot, styles.dot3]} />
-          </View>
-        </View>
-      </View>
-    );
-  };
-
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+    >
       <StatusBar barStyle="light-content" backgroundColor="#6C5CE7" />
-      
-      {/* Custom Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButtonHeader}
-          onPress={() => {
-            console.log('Going back to ChatList');
-            navigation.goBack();
-          }}
-        >
+
+      {/* Header */}
+      <Animated.View
+        style={[
+          styles.chatHeader,
+          {
+            opacity: headerAnim,
+            transform: [
+              {
+                translateY: headerAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [-50, 0],
+                }),
+              },
+            ],
+          },
+        ]}
+      >
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Icon name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.headerCenter}>
-          <Image
-            source={{ uri: conversation.sellerImage }}
-            style={styles.headerAvatar}
-          />
-          <View style={styles.headerInfo}>
-            <Text style={styles.headerName}>{conversation.sellerName}</Text>
-            <View style={styles.statusContainer}>
-              {conversation.online && (
-                <View style={styles.onlineDot} />
-              )}
-              <Text style={styles.headerStatus}>
-                {conversation.online ? 'Active now' : 'Offline'}
-              </Text>
-            </View>
+        <View style={styles.chatHeaderInfo}>
+          <View style={styles.headerAvatarContainer}>
+            <Image
+              source={{ uri: conversation.sellerImage }}
+              style={styles.headerAvatar}
+            />
+            {conversation.online && <View style={styles.headerOnlineIndicator} />}
           </View>
-        </TouchableOpacity>
 
-        <View style={styles.headerRight}>
-          <TouchableOpacity style={styles.headerIcon}>
+          <View style={styles.headerTextContainer}>
+            <Text style={styles.chatHeaderName}>{conversation.sellerName}</Text>
+            <Text style={styles.chatHeaderStatus}>
+              {conversation.online ? '● Active now' : 'Offline'}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.headerActions}>
+          <TouchableOpacity style={styles.headerActionButton}>
             <Icon name="call" size={22} color="#fff" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.headerIcon}>
-            <Icon name="ellipsis-vertical" size={22} color="#fff" />
+          <TouchableOpacity style={styles.headerActionButton}>
+            <Icon name="videocam" size={24} color="#fff" />
           </TouchableOpacity>
         </View>
-      </View>
+      </Animated.View>
 
-      {/* Messages List */}
+      {/* Messages */}
       <FlatList
         ref={flatListRef}
         data={messages}
@@ -300,55 +243,65 @@ const ChatDetailScreen = ({ route, navigation }) => {
         keyExtractor={item => item.id}
         contentContainerStyle={styles.messagesContainer}
         showsVerticalScrollIndicator={false}
-        onContentSizeChange={() => {
-          flatListRef.current?.scrollToEnd({ animated: true });
-        }}
-        ListFooterComponent={renderTypingIndicator}
+        onContentSizeChange={() =>
+          flatListRef.current?.scrollToEnd({ animated: true })
+        }
       />
 
-      {/* Input Area */}
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-      >
-        <View style={styles.inputContainer}>
-          <TouchableOpacity style={styles.attachButton}>
-            <Icon name="add-circle" size={28} color="#6C5CE7" />
-          </TouchableOpacity>
-
-          <View style={styles.inputWrapper}>
-            <TextInput
-              style={styles.input}
-              placeholder="Type a message..."
-              placeholderTextColor="#B2BEC3"
-              value={inputText}
-              onChangeText={setInputText}
-              multiline
-              maxLength={500}
-              onSubmitEditing={sendMessage}
-            />
-            <TouchableOpacity style={styles.emojiButton}>
-              <Icon name="happy-outline" size={24} color="#636E72" />
-            </TouchableOpacity>
+      {/* Typing Indicator */}
+      {isTyping && (
+        <View style={styles.typingContainer}>
+          <Image
+            source={{ uri: conversation.sellerImage }}
+            style={styles.typingAvatar}
+          />
+          <View style={styles.typingBubble}>
+            <View style={styles.typingDots}>
+              <View style={[styles.dot, styles.dot1]} />
+              <View style={[styles.dot, styles.dot2]} />
+              <View style={[styles.dot, styles.dot3]} />
+            </View>
           </View>
+        </View>
+      )}
 
-          <TouchableOpacity
-            style={[
-              styles.sendButton,
-              inputText.trim() === '' && styles.sendButtonDisabled,
-            ]}
-            onPress={sendMessage}
-            disabled={inputText.trim() === ''}
-          >
-            <Icon
-              name="send"
-              size={20}
-              color="#fff"
-            />
+      {/* Input Area */}
+      <View style={styles.inputContainer}>
+        <TouchableOpacity style={styles.iconButton}>
+          <Icon name="add-circle" size={28} color="#6C5CE7" />
+        </TouchableOpacity>
+
+        <View style={styles.inputWrapper}>
+          <TextInput
+            style={styles.input}
+            placeholder="Type a message..."
+            placeholderTextColor="#B2BEC3"
+            value={inputText}
+            onChangeText={setInputText}
+            multiline
+            maxLength={500}
+          />
+          <TouchableOpacity style={styles.emojiButton}>
+            <Icon name="happy-outline" size={24} color="#636E72" />
           </TouchableOpacity>
         </View>
-      </KeyboardAvoidingView>
-    </View>
+
+        <TouchableOpacity
+          style={[
+            styles.sendButton,
+            inputText.trim() && styles.sendButtonActive,
+          ]}
+          onPress={sendMessage}
+          disabled={!inputText.trim()}
+        >
+          <Icon
+            name="send"
+            size={20}
+            color="#fff"
+          />
+        </TouchableOpacity>
+      </View>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -357,83 +310,69 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F5F6FA',
   },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F5F6FA',
-  },
-  errorText: {
-    fontSize: 18,
-    color: '#2D3436',
-    marginBottom: 20,
-  },
-  backButtonText: {
-    color: '#6C5CE7',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  header: {
+  chatHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingTop: Platform.OS === 'ios' ? 50 : 12,
-    paddingBottom: 12,
+    paddingBottom: 16,
     backgroundColor: '#6C5CE7',
-    elevation: 4,
+    elevation: 8,
     shadowColor: '#6C5CE7',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
   },
-  backButtonHeader: {
+  backButton: {
     marginRight: 12,
-    padding: 4,
   },
-  headerCenter: {
+  chatHeaderInfo: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  headerAvatarContainer: {
+    position: 'relative',
+    marginRight: 12,
   },
   headerAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     borderWidth: 2,
     borderColor: '#fff',
-    marginRight: 12,
   },
-  headerInfo: {
+  headerOnlineIndicator: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#00D68F',
+    borderWidth: 2,
+    borderColor: '#6C5CE7',
+  },
+  headerTextContainer: {
     flex: 1,
   },
-  headerName: {
-    fontSize: 17,
+  chatHeaderName: {
+    fontSize: 18,
     fontWeight: '700',
     color: '#fff',
-    marginBottom: 2,
   },
-  statusContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  onlineDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#00D68F',
-    marginRight: 6,
-  },
-  headerStatus: {
-    fontSize: 12,
+  chatHeaderStatus: {
+    fontSize: 13,
     color: '#DFE6E9',
+    marginTop: 2,
   },
-  headerRight: {
+  headerActions: {
     flexDirection: 'row',
-    alignItems: 'center',
   },
-  headerIcon: {
+  headerActionButton: {
     marginLeft: 16,
-    padding: 4,
   },
   messagesContainer: {
     padding: 16,
@@ -443,12 +382,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginBottom: 16,
     alignItems: 'flex-end',
+    maxWidth: '85%',
   },
   buyerMessage: {
-    justifyContent: 'flex-end',
+    alignSelf: 'flex-end',
   },
   sellerMessage: {
-    justifyContent: 'flex-start',
+    alignSelf: 'flex-start',
   },
   messageAvatar: {
     width: 32,
@@ -456,12 +396,16 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     marginHorizontal: 8,
   },
+  buyerAvatar: {
+    marginLeft: 8,
+    marginRight: 0,
+  },
   messageBubble: {
-    maxWidth: '70%',
+    maxWidth: '75%',
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 12,
     borderRadius: 20,
-    elevation: 1,
+    elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
@@ -488,24 +432,39 @@ const styles = StyleSheet.create({
   messageFooter: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 4,
-    justifyContent: 'flex-end',
+    marginTop: 6,
   },
-  timestamp: {
+  messageTime: {
     fontSize: 11,
-    marginRight: 4,
+    fontWeight: '500',
   },
-  buyerTimestamp: {
-    color: '#DFE6E9',
+  buyerTime: {
+    color: 'rgba(255,255,255,0.7)',
   },
-  sellerTimestamp: {
+  sellerTime: {
     color: '#B2BEC3',
   },
-  readIcon: {
-    marginLeft: 2,
+  statusIcon: {
+    marginLeft: 4,
+  },
+  typingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+  },
+  typingAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    marginRight: 8,
   },
   typingBubble: {
+    backgroundColor: '#fff',
+    paddingHorizontal: 16,
     paddingVertical: 12,
+    borderRadius: 20,
+    elevation: 2,
   },
   typingDots: {
     flexDirection: 'row',
@@ -516,60 +475,57 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     backgroundColor: '#B2BEC3',
-    marginHorizontal: 3,
+    marginHorizontal: 2,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
     paddingVertical: 12,
     backgroundColor: '#fff',
     borderTopWidth: 1,
-    borderTopColor: '#E8E9ED',
+    borderTopColor: '#DFE6E9',
   },
-  attachButton: {
+  iconButton: {
     marginRight: 8,
     marginBottom: 8,
   },
   inputWrapper: {
     flex: 1,
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'center',
     backgroundColor: '#F5F6FA',
     borderRadius: 24,
     paddingHorizontal: 16,
     paddingVertical: 8,
-    maxHeight: 100,
+    marginRight: 8,
   },
   input: {
     flex: 1,
     fontSize: 15,
     color: '#2D3436',
-    maxHeight: 80,
-    paddingTop: 8,
-    paddingBottom: 8,
+    maxHeight: 100,
+    paddingVertical: 6,
   },
   emojiButton: {
     marginLeft: 8,
-    marginBottom: 4,
   },
   sendButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#6C5CE7',
+    backgroundColor: '#B2BEC3',
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 8,
-    elevation: 2,
+    marginBottom: 4,
+  },
+  sendButtonActive: {
+    backgroundColor: '#6C5CE7',
+    elevation: 4,
     shadowColor: '#6C5CE7',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.4,
     shadowRadius: 4,
-  },
-  sendButtonDisabled: {
-    backgroundColor: '#B2BEC3',
-    elevation: 0,
   },
 });
 
